@@ -31,6 +31,7 @@ from json_codec.codecs.union_codec import (
 from json_codec.types import (
     AssumeDataclass,
     AssumeGeneric,
+    AssumeNewType,
     ParseProcessResult,
     TypeDecoder,
     ValidationError,
@@ -92,6 +93,14 @@ def __get_recursive_mapped_type(cls_type: Type[Any]) -> Type[Any]:
     return cls_type
 
 
+def is_new_type(type_: Type[Any]) -> bool:
+    return hasattr(type_, "__supertype__")
+
+
+def get_new_type_supertype(type_: Type[Any]) -> Type[Any]:
+    return cast(AssumeNewType, type_).__supertype__
+
+
 def __parse_value(
     value: Any,
     type_: Type[T],
@@ -106,6 +115,8 @@ def __parse_value(
         real_type = cast(AssumeGeneric, type_).__origin__
         target_type = real_type
         type_args = cast(AssumeGeneric, type_).__args__
+    elif is_new_type(type_):
+        target_type = get_new_type_supertype(type_)
     elif not is_dataclass(type_) and not issubclass(real_type, Enum):
         target_type = __get_recursive_mapped_type(type_)
 

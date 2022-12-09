@@ -26,6 +26,10 @@ class AssumeGeneric(Protocol):
     _name: str
 
 
+class AssumeNewType(Protocol):
+    __supertype__: Type[Any]
+
+
 T = TypeVar("T")
 
 

@@ -3,18 +3,40 @@ from enum import Enum
 import json
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Dict, List, Optional, Union
+from this import d
+from typing import Dict, List, NewType, Optional, Union
 
 import pytest
 
 from json_codec.json_codec import (
     LocatedValidationErrorCollection,
     get_class_or_type_name,
-    decode as parse_item,
+    decode,
 )
 
 
 class TestJsonDeserializerCodec:
+    def test_decode_primitives(self) -> None:
+        assert decode(json.loads("true"), bool) is True
+        assert decode(json.loads("false"), bool) is False
+        assert decode(json.loads("null"), Optional[bool]) is None
+        assert decode(json.loads("1"), int) == 1
+        assert decode(json.loads("1"), Decimal) == Decimal("1")
+        assert decode(json.loads('"1.1"'), Decimal) == Decimal("1.1")
+        assert decode(json.loads('"1.1"'), float) == 1.1
+        assert decode(json.loads('"1.1"'), str) == "1.1"
+        
+        assert decode(json.loads('[1,1]'), List[int]) == [1, 1]
+
+
+    def test_frozen_dataclass(self) -> None:
+        @dataclass(frozen=True)
+        class User:
+            name: str
+            age: int
+
+        assert decode({"name": "John", "age": 30}, User) == User(name="John", age=30)
+
     def test_basic_dataclass(self) -> None:
         @dataclass
         class Dummy:
@@ -37,7 +59,7 @@ class TestJsonDeserializerCodec:
 
         dummy_json = json.loads(dummy_json_text)
 
-        parsed = parse_item(dummy_json, Dummy)
+        parsed = decode(dummy_json, Dummy)
 
         assert parsed.text_list == ["a", "b", "c"]
         assert parsed.text_dict["a"] == Decimal("1.0")
@@ -80,7 +102,7 @@ class TestJsonDeserializerCodec:
 
         dummy_json = json.loads(dummy_json_text)
 
-        parsed = parse_item(dummy_json, Dummy)
+        parsed = decode(dummy_json, Dummy)
 
         assert parsed.text_list == ["a", "b", "c"]
         assert parsed.text_dict["a"] == Decimal("1.0")
@@ -112,7 +134,7 @@ class TestJsonDeserializerCodec:
 
             dummy_json = json.loads(dummy_json_text)
 
-            parse_item(dummy_json, Dummy)
+            decode(dummy_json, Dummy)
 
     def test_raise_when_missing_field(self) -> None:
 
@@ -129,7 +151,7 @@ class TestJsonDeserializerCodec:
 
             dummy_json = json.loads(dummy_json_text)
 
-            parse_item(dummy_json, Dummy)
+            decode(dummy_json, Dummy)
 
     def test_get_class_or_type_name(self) -> None:
         @dataclass
@@ -165,7 +187,7 @@ class TestJsonDeserializerCodec:
 
             dummy_json = json.loads(dummy_json_text)
 
-            parse_item(dummy_json, Dummy)
+            decode(dummy_json, Dummy)
 
     def test_dict_with_wrong_type(self) -> None:
 
@@ -186,7 +208,7 @@ class TestJsonDeserializerCodec:
 
             dummy_json = json.loads(dummy_json_text)
 
-            a = parse_item(dummy_json, Dummy)
+            a = decode(dummy_json, Dummy)
 
         assert e.value is not None
 
@@ -208,7 +230,7 @@ class TestJsonDeserializerCodec:
 
         dummy_json = json.loads(dummy_json_text)
 
-        a = parse_item(dummy_json, Dummy)
+        a = decode(dummy_json, Dummy)
 
         assert a.my_enum == MyEnum.A
 
@@ -233,7 +255,7 @@ class TestJsonDeserializerCodec:
 
             dummy_json = json.loads(dummy_json_text)
 
-            a = parse_item(dummy_json, Dummy)
+            a = decode(dummy_json, Dummy)
 
     def test_date(self) -> None:
         @dataclass
@@ -253,7 +275,7 @@ class TestJsonDeserializerCodec:
 
         dummy_json = json.loads(dummy_json_text)
 
-        a = parse_item(dummy_json, Dummy)
+        a = decode(dummy_json, Dummy)
 
         assert a.date_ == date(2020, 1, 1)
         assert a.date_time == datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
@@ -276,7 +298,7 @@ class TestJsonDeserializerCodec:
     
                 dummy_json = json.loads(dummy_json_text)
     
-                a = parse_item(dummy_json, Dummy)
+                a = decode(dummy_json, Dummy)
     def test_primitive_class_inheritance(self) -> None:
         class MyInt(int):
             pass
@@ -294,7 +316,7 @@ class TestJsonDeserializerCodec:
 
         dummy_json = json.loads(dummy_json_text)
 
-        a = parse_item(dummy_json, Dummy)
+        a = decode(dummy_json, Dummy)
 
         assert a.my_int == MyInt(1)
 
@@ -315,6 +337,16 @@ class TestJsonDeserializerCodec:
 
         dummy_json = json.loads(dummy_json_text)
         
-        parsed = parse_item(dummy_json, Dummy)
+        parsed = decode(dummy_json, Dummy)
 
         assert parsed.my_int == MyInt(1)
+        assert isinstance(parsed.my_int, MyInt)
+        
+
+        
+    def test_decode_newtype(self):
+
+        UserId = NewType("UserId", int)
+
+        assert decode(json.loads("1"), UserId) == UserId(1)
+        assert isinstance(decode(json.loads("1"), UserId), int)
