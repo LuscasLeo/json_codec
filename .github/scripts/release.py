@@ -10,5 +10,5 @@ def entry_point():
     args = parser.parse_args()
 
     if args.version:
-        print(version("gha_python_packaging_demo"))
+        print(version("json_codec"))
         sys.exit()
