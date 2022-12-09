@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 from argparse import ArgumentParser
 from importlib.metadata import version
