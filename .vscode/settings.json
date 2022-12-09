@@ -1,0 +1,22 @@
+{
+    "python.testing.pytestArgs": [
+        "-c",
+        "pytest.ini",
+        "--cov=.",
+        "--cov-report=term-missing",
+        "--cov-report=html",
+        "--cov-report=xml",
+        "--cov-append"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.formatting.provider": "black",
+    "python.linting.mypyEnabled": true,
+    "python.linting.enabled": true,
+    "task.allowAutomaticTasks": "on",
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.fixAll": [
+        "source.convertImportFormat",
+        "source.unusedImports"
+    ],
+}
