@@ -1,0 +1,1 @@
+from codecs import decode, encode
