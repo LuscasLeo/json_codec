@@ -132,6 +132,6 @@ from typing import NewType
 UserId = NewType("UserId", int)
 
 assert decode(json.loads("1"), UserId) == UserId(1)
-assert isinstance(decode(json.loads("1"), UserId), UserId)
+assert isinstance(decode(json.loads("1"), UserId), int)
 
 ```
