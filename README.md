@@ -35,6 +35,7 @@ assert decode(json.loads('[1,1]'), List[int]) == [1, 1]
 ```python
 from dataclasses import dataclass
 from json_codec import decode
+import json
 
 @dataclass(frozen=True)
 class User:
@@ -78,6 +79,10 @@ assert parsed.optional_text == "hello"
 ### Parse a dataclass with a nested dataclass
 
 ```python
+from dataclasses import dataclass
+from json_codec import decode
+import json
+
  @dataclass
 class NestedDummy:
     text: str
@@ -128,6 +133,7 @@ assert parsed.nested.boolean is True
 ```python
 from json_codec import decode
 from typing import NewType
+import json
 
 UserId = NewType("UserId", int)
 
