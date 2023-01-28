@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 from decimal import Decimal
 from this import d
-from typing import Dict, List, NewType, Optional, Union
+from typing import Dict, List, NewType, Optional, Union, Tuple, Set
 
 import pytest
 
@@ -12,6 +12,7 @@ from json_codec.json_codec import (
     LocatedValidationErrorCollection,
     get_class_or_type_name,
     decode,
+    encode,
 )
 
 
@@ -350,3 +351,29 @@ class TestJsonDeserializerCodec:
 
         assert decode(json.loads("1"), UserId) == UserId(1)
         assert isinstance(decode(json.loads("1"), UserId), int)
+
+    def test_tuple(self):
+        @dataclass
+        class Dummy:
+            t: Tuple[int, str, bool]
+
+        dummy_json_text = '{"t": [1, "2", true]}'
+
+        foo = Dummy((1, "2", True))
+        assert json.dumps(encode(foo)) == dummy_json_text
+
+        bar = decode(json.loads(dummy_json_text), Dummy)
+        assert foo == bar
+
+    def test_set(self):
+        @dataclass
+        class Dummy:
+            s: Set[int]
+
+        dummy_json_text = '{"s": [1, 2, 3]}'
+
+        foo = Dummy({1, 2, 3})
+        assert json.dumps(encode(foo)) == dummy_json_text
+
+        bar = decode(json.loads(dummy_json_text), Dummy)
+        assert foo == bar

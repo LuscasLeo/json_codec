@@ -284,7 +284,7 @@ def __encode(value: Any) -> Any:
         return str(value)
     if isinstance(value, (int, float, bool)):
         return value
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, (list, tuple, set)):
         return [__encode(v) for v in value]
     if isinstance(value, dict):
         return {__encode(k): __encode(v) for k, v in value.items()}
