@@ -33,7 +33,7 @@ class SetTypeDecoder(TypeDecoder[Set[T]]):
 
         for index, item in enumerate(value):
             parsed_item = yield ParseProcessYield(
-                item_type, item, json_path=f"[{index}]"
+                type_=item_type, value=item, json_path=f"[{index}]"
             )
             if isinstance(parsed_item.result, Exception):
                 raise parsed_item.result
