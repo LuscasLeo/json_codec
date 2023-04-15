@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "json-codec"
-version = "0.1.4"
+version = "0.1.5"
 description = ""
 authors = ["Lucas Silva <lucas76leonardo@gmail.com>"]
 readme = "README.md"
