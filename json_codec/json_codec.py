@@ -1,3 +1,4 @@
+import base64
 from dataclasses import MISSING, asdict, dataclass, is_dataclass
 from datetime import date, datetime, time
 from decimal import Decimal
@@ -71,6 +72,7 @@ typers_parsers: Dict[Any, TypeDecoder[Any]] = {
     datetime: DateTimeTypeDecoder(),
     time: TimeTypeParser(),
     type(None): PrimitiveTypeDecoder(lambda x: None, "null"),
+    bytes: PrimitiveTypeDecoder(base64.b64decode, "bytes"),
 }
 
 
@@ -299,6 +301,8 @@ def __encode(value: Any) -> Any:
         return {__encode(k): __encode(v) for k, v in value.items()}
     if is_dataclass(value):
         return __encode(asdict(value))
+    if isinstance(value, bytes):
+        return base64.b64encode(value).decode("utf-8")
     if value is None:
         return None
     raise ValueError(f"Unsupported type: {type(value)}")

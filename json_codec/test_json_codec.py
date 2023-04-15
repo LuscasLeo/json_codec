@@ -1,3 +1,4 @@
+import base64
 import json
 from dataclasses import dataclass
 from datetime import date, datetime, time, timezone
@@ -10,6 +11,7 @@ import pytest
 from json_codec.json_codec import (
     LocatedValidationErrorCollection,
     decode,
+    encode,
     optional,
 )
 from json_codec.utils import get_class_or_type_name
@@ -341,3 +343,29 @@ class TestJsonDeserializerCodec:
 
         assert decode(json.loads("1"), UserId) == UserId(1)
         assert isinstance(decode(json.loads("1"), UserId), int)
+
+    def test_encode_and_decode_bytes(self):
+
+        hello_bytes = b"hello"
+
+        base64_hello_bytes = base64.b64encode(hello_bytes).decode("utf-8")
+
+        assert encode(hello_bytes) == base64_hello_bytes
+
+        assert decode(base64_hello_bytes, bytes) == hello_bytes
+
+        @dataclass
+        class Dummy:
+            bytes_: bytes
+
+        dummy_json_text = """
+        {
+            "bytes_": "aGVsbG8="
+        }
+        """
+
+        dummy_json = json.loads(dummy_json_text)
+
+        parsed = decode(dummy_json, Dummy)
+
+        assert parsed.bytes_ == hello_bytes
