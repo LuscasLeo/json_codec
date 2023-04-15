@@ -1,5 +1,5 @@
-from typing import Any, Callable, Generator, Tuple, Type, TypeVar
-from datetime import date, datetime, time
+from typing import Any, Generator, Type, TypeVar
+from datetime import datetime, time
 
 from json_codec.types import (
     ParseProcessResult,
@@ -21,7 +21,6 @@ class TimeTypeDecoder(TypeDecoder[time]):
             return self._failure(ValidationError(f"Expected string, got {value}"))
 
         try:
-
             return self._success(datetime.strptime(value, "%H:%M:%S").time())
         except ValueError:
             return self._failure(

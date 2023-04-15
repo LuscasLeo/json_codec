@@ -1,4 +1,4 @@
-from typing import Any, Generator, Tuple, Type, TypeVar
+from typing import Any, Generator, Type, TypeVar
 
 from json_codec.types import (
     ParseProcessResult,

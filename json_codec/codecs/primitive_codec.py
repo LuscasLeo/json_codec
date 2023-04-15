@@ -1,4 +1,4 @@
-from typing import Any, Callable, Generator, Tuple, Type, TypeVar
+from typing import Any, Callable, Generator, Type, TypeVar
 
 from json_codec.types import (
     ParseProcessResult,
@@ -11,8 +11,9 @@ T = TypeVar("T")
 
 
 class PrimitiveTypeDecoder(TypeDecoder[T]):
-    def __init__(self, type_: Callable[..., T]) -> None:
+    def __init__(self, type_: Callable[..., T], type_name: str) -> None:
         self.type_ = type_
+        self.type_name = type_name
 
     def parse(
         self, value: Any, *types: Type[Any]
@@ -24,7 +25,7 @@ class PrimitiveTypeDecoder(TypeDecoder[T]):
         except ValueError:
             return self._failure(
                 ValidationError(
-                    f"Expected type {self.type_}, but {value} is not a valid value"
+                    f"Expected type {self.type_name}, but '{value}' is not a valid value"
                 )
             )
         yield

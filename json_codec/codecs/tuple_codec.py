@@ -25,9 +25,7 @@ class TupleTypeDecoder(TypeDecoder[Tuple[T, ...]]):
 
         # TODO: make sure tuple will match the types
         for i, (item_type, item) in enumerate(zip(types, value)):
-            parsed_item = yield ParseProcessYield(
-                type_=item_type, value=item, json_path=f"[{i}]"
-            )
+            parsed_item = yield ParseProcessYield(item_type, item, json_path=f"[{i}]")
 
             if isinstance(parsed_item.result, Exception):
                 raise parsed_item.result

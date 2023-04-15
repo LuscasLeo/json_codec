@@ -1,27 +1,41 @@
-from dataclasses import MISSING, asdict, is_dataclass
+from dataclasses import MISSING, asdict, dataclass, is_dataclass
 from datetime import date, datetime, time
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Dict, List, Tuple, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID
 
-from typing_extensions import Type
-from json_codec.codecs.date_codec import DateTypeDecoder, serialize_date
+from json_codec.codecs.date_codec import (
+    DateTypeDecoder,
+    serialize_date,
+)
 from json_codec.codecs.datetime_codec import (
     DateTimeTypeDecoder,
     serialize_datetime,
 )
-
 from json_codec.codecs.dict_codec import DictTypeDecoder
-from json_codec.codecs.list_codec import ListTypeDecoder as ListTypeParser
-from json_codec.codecs.primitive_codec import (
-    PrimitiveTypeDecoder,
+from json_codec.codecs.list_codec import (
+    ListTypeDecoder as ListTypeParser,
 )
-from json_codec.codecs.set_codec import SetTypeDecoder as SetTypeParser
+from json_codec.codecs.primitive_codec import PrimitiveTypeDecoder
+from json_codec.codecs.set_codec import (
+    SetTypeDecoder as SetTypeParser,
+)
 from json_codec.codecs.time_codec import (
     TimeTypeDecoder as TimeTypeParser,
-    serialize_time,
 )
+from json_codec.codecs.time_codec import serialize_time
 from json_codec.codecs.tuple_codec import (
     TupleTypeDecoder as TupleTypeParser,
 )
@@ -35,42 +49,35 @@ from json_codec.types import (
     ParseProcessResult,
     TypeDecoder,
     ValidationError,
-    ValidationErrorBase,
 )
+from json_codec.utils import is_generic
 
 T = TypeVar("T")
 
 typers_parsers: Dict[Any, TypeDecoder[Any]] = {
-    Decimal: PrimitiveTypeDecoder(Decimal),
-    str: PrimitiveTypeDecoder(str),
-    int: PrimitiveTypeDecoder(int),
-    float: PrimitiveTypeDecoder(float),
-    bool: PrimitiveTypeDecoder(bool),
+    Decimal: PrimitiveTypeDecoder(Decimal, "Decimal"),
+    str: PrimitiveTypeDecoder(str, "string"),
+    int: PrimitiveTypeDecoder(int, "int"),
+    float: PrimitiveTypeDecoder(float, "float"),
+    bool: PrimitiveTypeDecoder(bool, "bool"),
     dict: DictTypeDecoder(),
     list: ListTypeParser(),
     tuple: TupleTypeParser(),
     set: SetTypeParser(),
-    UUID: PrimitiveTypeDecoder(UUID),
+    UUID: PrimitiveTypeDecoder(UUID, "UUID"),
     Union: UnionTypeParser(),
-    Any: PrimitiveTypeDecoder(lambda x: x),
+    Any: PrimitiveTypeDecoder(lambda x: x, "Any"),
     date: DateTypeDecoder(),
     datetime: DateTimeTypeDecoder(),
     time: TimeTypeParser(),
-    type(None): PrimitiveTypeDecoder(lambda x: None),
+    type(None): PrimitiveTypeDecoder(lambda x: None, "null"),
 }
 
 
-def is_generic(type_: Type[Any]) -> bool:
-    return (
-        hasattr(type_, "__origin__")
-        and cast(AssumeGeneric, type_).__origin__ is not None
-    )
-
-
-class LocatedValidationError(Exception):
-    def __init__(self, message: str, json_path: str) -> None:
-        super().__init__(message)
-        self.json_path = json_path
+@dataclass
+class LocatedValidationError:
+    message: str
+    json_path: str
 
 
 class LocatedValidationErrorCollection(Exception):
@@ -101,6 +108,10 @@ def get_new_type_supertype(type_: Type[Any]) -> Type[Any]:
     return cast(AssumeNewType, type_).__supertype__
 
 
+def is_typing_unmappable(type_: Type[Any]) -> bool:
+    return type_ is Any or type_ is type(None)
+
+
 def __parse_value(
     value: Any,
     type_: Type[T],
@@ -111,7 +122,9 @@ def __parse_value(
     real_type = type_
     target_type = type_
     type_args: Tuple[Type[Any], ...] = ()
-    if is_generic(type_):
+    if is_typing_unmappable(type_):
+        ...
+    elif is_generic(type_):
         real_type = cast(AssumeGeneric, type_).__origin__
         target_type = real_type
         type_args = cast(AssumeGeneric, type_).__args__
@@ -135,7 +148,6 @@ def __parse_value(
                 )
                 parsed_yield = parser_generator.send(parsed_value)
         except StopIteration as e:
-
             final = e.value
             if not isinstance(final, ParseProcessResult):
                 raise ValueError(f"Parser {parser} did not return a ParseProcessResult")
@@ -148,9 +160,14 @@ def __parse_value(
                 )
 
             if target_type != real_type:
-                final = ParseProcessResult(
-                    result=cast(Type[Any], real_type)(final.result),
-                )
+                if not isinstance(final.result, Exception):
+                    final = ParseProcessResult(
+                        result=cast(Type[Any], real_type)(final.result),
+                    )
+                else:
+                    final = ParseProcessResult(
+                        result=None,
+                    )
 
             return cast(ParseProcessResult[T], final)
 
@@ -165,7 +182,6 @@ def __parse_value(
                 )
             )
         except AssertionError as e:
-
             error = ValidationError(
                 str(e),
             )
@@ -181,7 +197,7 @@ def __parse_value(
         try:
             value = real_type(value)
             return ParseProcessResult(value)
-        except ValueError as e:
+        except ValueError:
             error = ValidationError(
                 "Invalid enum value for {}: {} | valid types: {}".format(
                     real_type,
@@ -217,7 +233,6 @@ def __parse_dataclass(
     kwargs: Dict[str, Any] = {}
 
     for field_name, field in fields.items():
-
         field_json_path = "{}.{}".format(json_path, field_name)
 
         if field_name not in value:
@@ -247,16 +262,6 @@ def __parse_dataclass(
     return cast(Callable[..., T], type_)(**kwargs)
 
 
-def get_class_or_type_name(type_: Type[Any]) -> str:
-    if is_generic(type_):
-        return cast(AssumeGeneric, type_).__repr__()
-
-    if is_dataclass(type_):
-        return type_.__name__
-
-    return type_.__qualname__
-
-
 def decode(value: Any, type_: Type[T]) -> T:
     errors: List[LocatedValidationError] = []
     parsed_value = __parse_value(value, type_, located_errors=errors)
@@ -267,6 +272,10 @@ def decode(value: Any, type_: Type[T]) -> T:
         raise parsed_value.result
 
     return parsed_value.result
+
+
+def optional(T: Type[T]) -> Type[T]:
+    return Optional[T]  # type: ignore
 
 
 def __encode(value: Any) -> Any:
@@ -284,7 +293,7 @@ def __encode(value: Any) -> Any:
         return str(value)
     if isinstance(value, (int, float, bool)):
         return value
-    if isinstance(value, (list, tuple, set)):
+    if isinstance(value, (list, tuple)):
         return [__encode(v) for v in value]
     if isinstance(value, dict):
         return {__encode(k): __encode(v) for k, v in value.items()}

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Generator, List, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, Generator, Type, TypeVar
 
 from json_codec.types import (
     ParseProcessResult,
@@ -6,8 +6,6 @@ from json_codec.types import (
     TypeArgsLengthMismatch,
     TypeDecoder,
     ValidationError,
-    ValidationErrorBase,
-    ValidationErrorCollection,
 )
 
 K = TypeVar("K")

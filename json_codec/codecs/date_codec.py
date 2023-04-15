@@ -1,5 +1,6 @@
-from typing import Any, Callable, Generator, Tuple, Type, TypeVar
+from typing import Any, Generator, Type, TypeVar
 from datetime import date, datetime
+
 from json_codec.types import (
     ParseProcessResult,
     ParseProcessYield,

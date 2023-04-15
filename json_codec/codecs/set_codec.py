@@ -1,4 +1,4 @@
-from typing import Any, Generator, List, Set, Tuple, Type, TypeVar
+from typing import Any, Generator, Set, Type, TypeVar
 
 from json_codec.types import (
     ParseProcessResult,
@@ -19,7 +19,6 @@ class SetTypeDecoder(TypeDecoder[Set[T]]):
         ParseProcessResult[Any],
         ParseProcessResult[Set[T]],
     ]:
-
         if not isinstance(value, list):
             return self._failure(ValidationError(f"Expected list, got {value}"))
 
@@ -33,7 +32,7 @@ class SetTypeDecoder(TypeDecoder[Set[T]]):
 
         for index, item in enumerate(value):
             parsed_item = yield ParseProcessYield(
-                type_=item_type, value=item, json_path=f"[{index}]"
+                item_type, item, json_path=f"[{index}]"
             )
             if isinstance(parsed_item.result, Exception):
                 raise parsed_item.result
